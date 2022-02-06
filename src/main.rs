@@ -1,38 +1,58 @@
 mod model;
 
+use reqwest::header::AUTHORIZATION;
+use crate::model::SiteUser;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // A hard-coded JSON
-    let json = r#"
-            {
-              "main": {
-                "temp": 30.94
-              }
-            }
-        "#;
-
-    // Deserialize the hardcoded JSON into a Weather struct
-    let weather1: model::Weather = serde_json::from_str(json).unwrap();
-
-    println!("\nWeather from a JSON we hard-coded locally:\n{:?}", weather1);
-
-    //
-    // Now that we know we can deserialize a hard-coded JSON into a struct model,
-    // let's see if we can fetch the weather from the backend.
-    //
 
     let client = reqwest::Client::new();
+    let u = SiteUser{
+        username: "joe".into(),
+        password: "my_password2".into(),
+    };
 
     let response = client
-        .get("https://api.openweathermap.org/data/2.5/weather?q=corvallis&appid=b98e3f089c86867862f28236d174368a&&units=imperial")
+        .post("http://localhost:3000/v1/auth/")
+        .json(&u)
         .send()
         .await?;
 
-    let weather2 = response
+    //println!("Response {:?}", response);
+    let auth_json = response
+        .json::<model::Token>()
+        .await?;
+
+    //println!("auth token {:?}", auth_json.main.token);
+    let token = "Bearer ".to_owned() + &auth_json.main.token;
+
+    // check weather response
+    let weather_response = client
+        .get("http://localhost:3000/v1/weather/")
+        .header(AUTHORIZATION, token)
+        .send()
+        .await?;
+
+    let weather = weather_response
         .json::<model::Weather>()
         .await?;
 
-    println!("\nWeather from openweathermap.org:\n {:?}", weather2);
+    println!("Temperature from weather service {:?}", weather);
+
+
+    // check hello world response
+    let hello_token = "Bearer ".to_owned() + &auth_json.main.token;
+    let hello_response = client
+        .get("http://localhost:3000/v1/hello/")
+        .header(AUTHORIZATION, hello_token)
+        .send()
+        .await?;
+
+    let hello = hello_response
+        .json::<model::Hello>()
+        .await?;
+
+    println!("Greeting from Hello: {:?}", hello.main.greeting);
 
     Ok(())
 }

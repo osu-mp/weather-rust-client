@@ -15,3 +15,30 @@ pub struct Weather {
 pub struct Main {
     temp: f64,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Token {
+    pub main: TokenMain,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TokenMain {
+    pub token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SiteUser {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Hello {
+    pub main: HelloMain,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HelloMain {
+    pub greeting: String,
+}
